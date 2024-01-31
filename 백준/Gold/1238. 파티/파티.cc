@@ -1,37 +1,82 @@
 #include <iostream>
 #include <vector>
+#include <queue>
+#include <limits>
 #include <algorithm>
 using namespace std;
-#define endl '\n'
-#define ALL(x) (x).begin(), (x).end()
-#define REP(i, from, to) for (int i = (from); i < (to); i++)
-
-static const int INF = 323456789;
-
+typedef pair<int, int> PAIR;
 int main(void) {
-    ios_base::sync_with_stdio(false); cin.tie(NULL);
-    int N, M, X;
-    cin >> N >> M >> X;
-    vector<vector<int> > road(N, vector<int>(N, INF));
-    REP (i, 0, M) {
-        int s, e, t; cin >> s >> e >> t;
-        road[s - 1][e - 1] = t;
-    }
-    road[X - 1][X - 1] = 0;
+	ios::sync_with_stdio(false);
+	int N, M, X; cin >> N >> M >> X;
+	X--;
+	vector<vector<PAIR>> graph(N);
+	vector<int> student(N, 0);
+	for (int i = 0; i < M; i++) {
+		int u, v, w; cin >> u >> v >> w;
+		graph[u - 1].push_back(PAIR(v - 1, w));
+	}
 
-    REP (b, 0, N) {
-        REP (i, 0, N) {
-            REP (k, 0, N) {
-                road[i][k] = min(road[i][k], road[i][b] + road[b][k]);
-            }
-        }
-    }
+	for (int i = 0; i < N; i++) {
+		if (i == X) continue;
+		priority_queue<PAIR, vector<PAIR>, greater<PAIR>> pq;
+		vector<int> visited(N, false);
+		vector<int> cost(N, numeric_limits<int>::max());
+		int start = i;
+		cost[start] = 0;
+		pq.push(PAIR(0, start));
 
-    int m = -1;
-    REP (i, 0, N) {
-        m = max(m, road[i][X - 1] + road[X - 1][i]);
-    }
-    cout << m << endl;
+		while (!pq.empty()) {
+			int cur;
+			do {
+				cur = pq.top().second; pq.pop();
+			} while (!pq.empty() && visited[cur]);
 
-    return 0;
+			if (visited[cur]) break;
+			if (cur == X) break;
+
+			visited[cur] = true;
+			for (auto& i : graph[cur]) {
+				int next = i.first, distance = i.second;
+				if (cost[next] > cost[cur] + distance) {
+					cost[next] = cost[cur] + distance;
+					pq.push(PAIR(cost[next], next));
+				}
+			}
+		}
+		student[i] = cost[X];
+	}
+
+	priority_queue<PAIR, vector<PAIR>, greater<PAIR>> pq;
+	vector<int> visited(N, false);
+	vector<int> cost(N, numeric_limits<int>::max());
+	pq.push(PAIR(0, X));
+	cost[X] = 0;
+
+	while (!pq.empty()) {
+		int cur;
+		do {
+			cur = pq.top().second; pq.pop();
+		} while (!pq.empty() && visited[cur]);
+
+
+		if (visited[cur]) break;
+		visited[cur] = true;
+
+		for (auto& i : graph[cur]) {
+			int next = i.first, distance = i.second;
+			if (cost[next] > cost[cur] + distance) {
+				cost[next] = cost[cur] + distance;
+				pq.push(PAIR(cost[next], next));
+			}
+		}
+	}
+
+	int maxCost = student[0] + cost[0];
+	for (int i = 1; i < N; i++) {
+		maxCost = max(maxCost, student[i] + cost[i]);
+	}
+
+	cout << maxCost << '\n';
+
+	return 0;
 }
